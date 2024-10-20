@@ -1,0 +1,122 @@
+<!-- verifier/templates/result.html -->
+
+{% extends 'base.html' %}
+{% block content %}
+    <div class="card glass-effect">
+        <div class="card-body">
+            <h2 class="card-title">Verification Result</h2>
+            <p class="card-text">The news "<strong>{{ news_query }}</strong>" is likely: <strong>{{ verdict }}</strong></p>
+
+            {% if results %}
+            <h3>Related Search Results:</h3>
+            <ul class="list-group">
+                {% for result in results %}
+                <li class="list-group-item">
+                    <a href="{{ result.link }}" class="result-link" target="_blank" style="color: #000000;">
+                        {{ result.title }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-warning">No relevant search results found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <canvas id="result-animation"></canvas>
+
+    <style>
+        #result-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        body {
+            background-color: #000000;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            color: #ffffff;
+        }
+        .list-group-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .result-link {
+            color: #ffffff !important;
+            transition: color 0.3s ease;
+        }
+        .result-link:hover {
+            color: #1a73e8 !important;
+            text-decoration: none;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Set up the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('result-animation'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Create particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 5000;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 50;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.09,
+            color: 0x1a73e8
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Create cylinder
+        const cylinderGeometry = new THREE.CylinderGeometry(20, 20, 50, 10);
+        const cylinderMaterial = new THREE.MeshBasicMaterial({
+            color: 0x1a73e8,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+        scene.add(cylinder);
+
+        camera.position.z = 30;
+
+        // Animation
+        function animate() {
+            requestAnimationFrame(animate);
+            particlesMesh.rotation.y += 0.001;
+            cylinder.rotation.y += 0.005;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+{% endblock %}
